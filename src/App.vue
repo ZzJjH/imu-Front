@@ -17,9 +17,9 @@
   // 图表配置
   const CHART_CONFIG = {
     maxDataLength: 200, // 最大数据点数量
-    accx: { color: '#ef4444', yMin: -40, yMax: 40 }, // X轴加速度配置
-    accy: { color: '#3b82f6', yMin: -40, yMax: 40 }, // Y轴加速度配置
-    accz: { color: '#22c55e', yMin: -40, yMax: 40 }  // Z轴加速度配置
+    accx: { color: '#ef4444', yMin: -60, yMax: 60 }, // X轴加速度配置
+    accy: { color: '#3b82f6', yMin: -60, yMax: 60 }, // Y轴加速度配置
+    accz: { color: '#22c55e', yMin: -60, yMax: 60 }  // Z轴加速度配置
   };
   // 数据源（三轴加速度）
   const dataSources = {
@@ -52,76 +52,95 @@
   
   // 绘制IMU曲线（三轴加速度）
   const startPoseDraw = () => {
-    if (!canvasInstance) return;
-    
-    const { ctx, width, height } = canvasInstance;
-    const accxConfig = CHART_CONFIG.accx;
-    const accyConfig = CHART_CONFIG.accy;
-    const acczConfig = CHART_CONFIG.accz;
-    
-    const draw = () => {
-      // 清空画布（半透明效果，实现轨迹渐变）
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-      ctx.fillRect(0, 0, width, height);
-      
-      // 计算X轴步长
-      const xStep = width / (CHART_CONFIG.maxDataLength - 1);
-      
-      // 绘制X轴加速度曲线
-      if (dataSources.accx.value.length >= 2) {
-        ctx.beginPath();
-        ctx.strokeStyle = accxConfig.color;
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        
-        dataSources.accx.value.forEach((value, index) => {
-          const y = height - ((value - accxConfig.yMin) / (accxConfig.yMax - accxConfig.yMin)) * height;
-          const x = index * xStep;
-          index === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-      }
-      
-      // 绘制Y轴加速度曲线
-      if (dataSources.accy.value.length >= 2) {
-        ctx.beginPath();
-        ctx.strokeStyle = accyConfig.color;
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        
-        dataSources.accy.value.forEach((value, index) => {
-          const y = height - ((value - accyConfig.yMin) / (accyConfig.yMax - accyConfig.yMin)) * height;
-          const x = index * xStep;
-          index === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-      }
-      
-      // 绘制Z轴加速度曲线
-      if (dataSources.accz.value.length >= 2) {
-        ctx.beginPath();
-        ctx.strokeStyle = acczConfig.color;
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        
-        dataSources.accz.value.forEach((value, index) => {
-          const y = height - ((value - acczConfig.yMin) / (acczConfig.yMax - acczConfig.yMin)) * height;
-          const x = index * xStep;
-          index === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-      }
-      
-      // 绘制网格线
-      drawGrid(ctx, width, height, 5, 5, accxConfig.yMin, accxConfig.yMax);
-      
-      animationFrame = requestAnimationFrame(draw);
-    };
-    
-    // 停止之前的绘制
-    if (animationFrame) cancelAnimationFrame(animationFrame);
+  if (!canvasInstance) return;
+
+  const { ctx, width, height } = canvasInstance;
+  const accxConfig = CHART_CONFIG.accx;
+  const accyConfig = CHART_CONFIG.accy;
+  const acczConfig = CHART_CONFIG.accz;
+
+  const draw = () => {
+    // ❗❗❗关键修改：每一帧彻底清屏（消除虚影）
+    ctx.clearRect(0, 0, width, height);
+
+    // 先画网格（避免覆盖曲线）
+    drawGrid(ctx, width, height, 5, 5, accxConfig.yMin, accxConfig.yMax);
+
+    const xStep = width / (CHART_CONFIG.maxDataLength - 1);
+
+    // ===== X轴 =====
+    if (dataSources.accx.value.length >= 2) {
+      ctx.beginPath();
+      ctx.strokeStyle = accxConfig.color;
+      ctx.lineWidth = 1.5;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      dataSources.accx.value.forEach((value, index) => {
+        const x = index * xStep;
+        const y =
+          height -
+          ((value - accxConfig.yMin) /
+            (accxConfig.yMax - accxConfig.yMin)) *
+            height;
+
+        index === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+
+      ctx.stroke();
+    }
+
+    // ===== Y轴 =====
+    if (dataSources.accy.value.length >= 2) {
+      ctx.beginPath();
+      ctx.strokeStyle = accyConfig.color;
+      ctx.lineWidth = 1.5;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      dataSources.accy.value.forEach((value, index) => {
+        const x = index * xStep;
+        const y =
+          height -
+          ((value - accyConfig.yMin) /
+            (accyConfig.yMax - accyConfig.yMin)) *
+            height;
+
+        index === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+
+      ctx.stroke();
+    }
+
+    // ===== Z轴 =====
+    if (dataSources.accz.value.length >= 2) {
+      ctx.beginPath();
+      ctx.strokeStyle = acczConfig.color;
+      ctx.lineWidth = 1.5;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      dataSources.accz.value.forEach((value, index) => {
+        const x = index * xStep;
+        const y =
+          height -
+          ((value - acczConfig.yMin) /
+            (acczConfig.yMax - acczConfig.yMin)) *
+            height;
+
+        index === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+
+      ctx.stroke();
+    }
+
     animationFrame = requestAnimationFrame(draw);
   };
+
+  if (animationFrame) cancelAnimationFrame(animationFrame);
+  animationFrame = requestAnimationFrame(draw);
+};
+
   
   // 绘制网格线辅助方法
   const drawGrid = (ctx, width, height, xDivisions, yDivisions, yMin, yMax) => {
@@ -147,7 +166,7 @@
     }
     
     // 绘制Y轴范围文本
-    ctx.fillStyle = 'rgba(100, 100, 100, 0.7)';
+    // ctx.fillStyle = 'rgba(100, 100, 100, 0.7)';
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText(yMax.toString(), width - 5, 15);
@@ -421,4 +440,3 @@
     display: block;
   }
   </style>
-  
